@@ -16,6 +16,7 @@ import { AuthProvider } from './src/AuthContext';
 import AccountScreen from './src/screens/AccountScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
 import { fonts } from './src/theme';
+import TabIcon from './src/components/TabIcon';
 
 const Tab = createBottomTabNavigator();
 
@@ -23,11 +24,12 @@ function Tabs() {
   const c = useColors();
   return (
     <NavigationContainer>
-      <Tab.Navigator initialRouteName="Challenge" screenOptions={{
+      <Tab.Navigator initialRouteName="Challenge" screenOptions={({ route }) => ({
         headerShown: false, tabBarActiveTintColor: c.pink, tabBarInactiveTintColor: c.ink2,
         tabBarStyle: { backgroundColor: c.surface, borderTopColor: c.line },
         tabBarLabelStyle: { fontFamily: fonts.bodyBold, fontSize: 10.5 },
-      }}>
+        tabBarIcon: ({ color, size }) => <TabIcon name={route.name} color={color} size={size} />,
+      })}>
         <Tab.Screen name="Explore" component={ExploreScreen} />
         <Tab.Screen name="Skills" component={SkillsScreen} />
         <Tab.Screen name="Challenge" component={ChallengeScreen} />
