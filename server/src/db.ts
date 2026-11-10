@@ -26,3 +26,14 @@ export function openDb(path = ':memory:'): DB {
   db.exec(SCHEMA);
   return db;
 }
+
+/**
+ * Privacy clean-up: remove sign-in codes (which hold an email address) and sessions once they have expired,
+ * so we never keep the email of someone who asked for a code but never signed in.
+ * Returns how many rows were removed.
+ */
+export function purgeExpired(db: DB, nowMs: number): { codes: number; sessions: number } {
+  const codes = db.prepare('DELETE FROM login_codes WHERE expires_at < ?').run(nowMs).changes;
+  const sessions = db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(nowMs).changes;
+  return { codes: Number(codes), sessions: Number(sessions) };
+}
