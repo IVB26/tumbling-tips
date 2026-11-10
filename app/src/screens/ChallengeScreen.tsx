@@ -7,7 +7,13 @@ import { useAuth } from '../AuthContext';
 import { api } from '../api';
 import LoginForm from '../components/LoginForm';
 import AthleteForm from '../components/AthleteForm';
-import { DAYS, DAY_NAMES, MILESTONES, dayExercises, dow, finisherFor } from '../lib/challenge';
+import { DAYS, DAY_NAMES, dayExercises, dow, finisherFor } from '../lib/challenge';
+import { PRIZES_CONFIRMED } from '../config';
+import { COMPETITION_PRIZES, shownMilestones } from '../lib/prizes';
+import { streakMessage, tierProgress } from '../lib/streak';
+import Tree from '../components/Tree';
+import RulesModal from '../components/RulesModal';
+import RewardModal, { type Reward } from '../components/RewardModal';
 
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 type Clock = { phase: 'before' | 'open' | 'closed'; dom: number | null; lastOpenDay: number; onTimeDay: number | null };
@@ -29,6 +35,8 @@ export default function ChallengeScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [clock, setClock] = useState<Clock | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [reward, setReward] = useState<Reward | null>(null);
 
   const load = useCallback(async (first = false) => {
     if (!athlete || !token) return;
@@ -46,19 +54,24 @@ export default function ChallengeScreen() {
   useEffect(() => { setSt(null); setBoard(null); if (athlete) { setLoading(true); load(true).finally(() => setLoading(false)); } }, [athlete?.id, token]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { api<Clock>('GET', '/challenge/clock').then(setClock).catch(() => {}); }, []);
 
-  const Shell = ({ children }: { children: React.ReactNode }) => (
-    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 12, gap: 18 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
-      <Hero st={st} clock={clock} />
-      {children}
-    </ScrollView>
+  // A plain function, not a component: a component defined here would be rebuilt on every keystroke and drop the keyboard.
+  const frame = (children: React.ReactNode) => (
+    <>
+      <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 12, gap: 18 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
+        <Hero st={st} clock={clock} onRules={() => setRulesOpen(true)} />
+        {children}
+      </ScrollView>
+      <RulesModal visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <RewardModal reward={reward} onClose={() => setReward(null)} />
+    </>
   );
 
-  if (status === 'loading') return <Shell><ActivityIndicator /></Shell>;
-  if (status === 'out') return <Shell><LoginForm /></Shell>;
-  if (!athlete) return <Shell><AthleteForm /></Shell>;
-  if (loading && !st) return <Shell><ActivityIndicator /></Shell>;
-  if (!st) return <Shell><Text style={{ color: '#C8102E', fontFamily: fonts.bodyBold }}>{msg || 'Could not load the challenge.'}</Text><Pressable onPress={() => load(true)}><Text style={{ color: c.pinkDeep, fontFamily: fonts.bodyBold }}>Try again</Text></Pressable></Shell>;
+  if (status === 'loading') return frame(<ActivityIndicator />);
+  if (status === 'out') return frame(<LoginForm />);
+  if (!athlete) return frame(<AthleteForm />);
+  if (loading && !st) return frame(<ActivityIndicator />);
+  if (!st) return frame(<><Text style={{ color: '#C8102E', fontFamily: fonts.bodyBold }}>{msg || 'Could not load the challenge.'}</Text><Pressable onPress={() => load(true)}><Text style={{ color: c.pinkDeep, fontFamily: fonts.bodyBold }}>Try again</Text></Pressable></>);
 
   const apply = (s: State) => { setSt(s); api<Board>('GET', `/leaderboard?athleteId=${athlete.id}`, token).then(setBoard).catch(() => {}); };
   const act = async (fn: () => Promise<State>) => { setMsg(''); try { apply(await fn()); } catch (e: any) { setMsg(e.message); load(); } };
@@ -77,7 +90,17 @@ export default function ChallengeScreen() {
     setSt({ ...st, days: st.days.map(x => (x.day === sel ? { ...x, ticks: next } : x)) });  // show it instantly, the server confirms
     act(() => api<State>('PUT', `${base}/ticks`, token, { ticks: next }));
   };
-  const finish = () => act(() => api<State>('POST', `${base}/finish`, token, { confirm: true }));
+  const finish = async () => {
+    setMsg('');
+    const rankBefore = st.rank;
+    try {
+      const res = await api<State>('POST', `${base}/finish`, token, { confirm: true });
+      apply(res);
+      const day = res.days[sel - 1];
+      setReward({ day: sel, points: day.points, multiplier: day.onTime ? res.multiplier : 1, rankBefore, rankAfter: res.rank, entered: res.entered,
+        daysLeft: DAYS - res.days.filter(x => x.done).length, prize: shownMilestones()[sel], finisherNext: res.clock.onTimeDay === sel });
+    } catch (e: any) { setMsg(e.message); load(); }
+  };
   const logScore = () => {
     const v = parseInt(score, 10);
     if (!(v > 0)) return setMsg('Enter your score as a number');
@@ -85,8 +108,8 @@ export default function ChallengeScreen() {
     act(() => api<State>('POST', `${base}/finisher`, token, { value: v }));
   };
 
-  return (
-    <Shell>
+  return frame(
+    <>
       {me && me.athletes.length > 1 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {me.athletes.map(a => (
@@ -123,17 +146,27 @@ export default function ChallengeScreen() {
                     k === sel && { shadowColor: c.petal, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 0 }, elevation: 3 }]}>
                   <Text style={{ fontFamily: fonts.display, fontSize: 17, color: done ? c.onPink : c.ink }}>{k}</Text>
                   <Text style={{ fontSize: 9, fontFamily: fonts.bodyBold, color: done ? c.onPink : c.ink2 }}>{done ? 'DONE' : k === st.clock.onTimeDay ? 'TODAY' : `${dayExercises(k).length} EX`}</Text>
-                  {MILESTONES[k] ? <Text style={s.star}>★</Text> : null}
+                  {shownMilestones()[k] ? <Text style={s.star}>★</Text> : null}
                 </Pressable>
               );
             })}
           </View>
 
-          <View style={[s.streak, { backgroundColor: c.pink }]}>
-            <View><Text style={{ color: '#fff', fontSize: 40, fontFamily: fonts.display }}>{st.streak}</Text><Text style={s.streakLabel}>DAY STREAK</Text></View>
-            <View style={s.mult}><Text style={{ fontFamily: fonts.display, fontSize: 32, color: c.pinkDeep }}>×{st.multiplier}</Text><Text style={{ fontSize: 11, color: c.pinkDeep, fontFamily: fonts.bodyBold }}>POINTS</Text></View>
+          <View style={[s.streak, { backgroundColor: c.pink }]} accessibilityLabel={`${st.streak}-day streak, times ${st.multiplier} points`}>
+            <View style={s.streakTop}>
+              <View><Text style={{ color: '#fff', fontSize: 40, fontFamily: fonts.display }}>{st.streak}</Text><Text style={s.streakLabel}>DAY STREAK</Text></View>
+              <View style={s.mult}><Text style={{ fontFamily: fonts.display, fontSize: 32, color: c.pinkDeep }}>×{st.multiplier}</Text><Text style={{ fontSize: 11, color: c.pinkDeep, fontFamily: fonts.bodyBold }}>POINTS</Text></View>
+            </View>
+            <View style={s.track}>
+              {tierProgress(st.streak).map(tr => (
+                <View key={tr.tier} style={{ flex: 1, gap: 5 }}>
+                  <View style={s.tierBar}><View style={{ height: 10, borderRadius: 5, backgroundColor: '#fff', width: `${tr.fill * 100}%` }} /></View>
+                  <Text style={{ color: '#fff', fontSize: 10.5, fontFamily: fonts.bodyBold, opacity: tr.current ? 1 : 0.75 }} numberOfLines={1}>{tr.label}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={{ color: '#fff', fontSize: 13.5, fontFamily: fonts.body }}>{streakMessage(st.streak)} Miss a day and it drops back to ×1.</Text>
           </View>
-          <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body, marginTop: -8 }}>Finish each day on its own date to keep your streak. Miss a day and it drops back to ×1.</Text>
 
           <View style={[s.panel, { backgroundColor: c.surface, borderColor: c.line }]}>
             <View style={s.row}>
@@ -163,7 +196,7 @@ export default function ChallengeScreen() {
                 <Text style={{ color: c.ink2, fontSize: 12, fontFamily: fonts.body }}>A parent or guardian confirms each finished day.</Text>
               </>
             )}
-            {MILESTONES[sel] && !d.done ? <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>Finishing this day also wins: {MILESTONES[sel].title}</Text> : null}
+            {shownMilestones()[sel] && !d.done ? <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>Finishing this day also wins: {shownMilestones()[sel].title}</Text> : null}
 
             <View style={[s.finisher, { borderTopColor: c.line }]}>
               <Text style={{ fontFamily: fonts.bodyBold, color: c.ink }}>{fin.name}</Text>
@@ -180,13 +213,43 @@ export default function ChallengeScreen() {
                 )}
             </View>
           </View>
+
+          <View style={{ gap: 8 }}>
+            <View style={s.row}>
+              <Text style={{ fontFamily: fonts.display, fontSize: 19, color: c.ink, flex: 1 }}>Your tree</Text>
+              <Text style={{ color: c.ink2, fontFamily: fonts.body }}>{st.days.filter(x => x.done).length}/{DAYS} ornaments</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}><Tree done={st.days.map(x => x.done)} /></View>
+          </View>
+
+          {PRIZES_CONFIRMED ? (
+            <View>
+              <View style={[s.row, { marginBottom: 4 }]}>
+                <Text style={{ fontFamily: fonts.display, fontSize: 19, color: c.ink, flex: 1 }}>Prizes</Text>
+                <Text style={{ color: c.ink2, fontFamily: fonts.body }}>Every 6 days</Text>
+              </View>
+              {Object.entries(shownMilestones()).map(([k, m], i) => {
+                const won = st.days[Number(k) - 1].done;
+                return (
+                  <View key={k} style={[s.prize, { borderTopColor: c.line, borderTopWidth: i ? 1 : 0 }]}>
+                    <Text style={{ fontSize: 22, color: won ? '#FF8AB3' : c.ink2 }}>{won ? '★' : '☆'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{m.title}</Text>
+                      <Text style={{ fontSize: 12.5, color: c.ink2, fontFamily: fonts.body }}>{m.body}</Text>
+                    </View>
+                    <Text style={{ fontSize: 12, fontFamily: fonts.bodyBold, color: won ? c.holly : c.ink2 }}>{won ? 'Won' : `Day ${k}`}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
         </>
       )}
-    </Shell>
+    </>
   );
 }
 
-function Hero({ st, clock }: { st: State | null; clock: Clock | null }) {
+function Hero({ st, clock, onRules }: { st: State | null; clock: Clock | null; onRules: () => void }) {
   const c = useColors();
   const done = st ? st.days.filter(d => d.done).length : 0;
   return (
@@ -194,6 +257,7 @@ function Hero({ st, clock }: { st: State | null; clock: Clock | null }) {
       <Text style={s.eyebrow}>1–24 DECEMBER · COMPETITION</Text>
       <Text style={[s.heroTitle, { fontFamily: fonts.display }]}>Christmas Strength Challenge</Text>
       <Text style={s.heroBody}>Daily strength exercises to keep your streak alive and push hard on the daily finisher.</Text>
+      <Pressable onPress={onRules} accessibilityRole="button" style={s.rulesBtn}><Text style={{ color: '#B5124F', fontFamily: fonts.bodyBold, fontSize: 13.5 }}>ⓘ  How it works</Text></Pressable>
       {st ? (
         <>
           <View style={s.bar}><View style={[s.barFill, { width: `${(done / DAYS) * 100}%` }]} /></View>
@@ -233,6 +297,23 @@ function BoardView({ board, athleteName }: { board: Board | null; athleteName: s
       <View style={s.row}><Text style={{ fontFamily: fonts.display, fontSize: 19, color: c.ink, flex: 1 }}>Leaderboard</Text><Text style={{ color: c.ink2 }}>{board.entered} entered</Text></View>
       {board.top.length === 0 ? <Text style={{ color: c.ink2, fontFamily: fonts.body }}>No one has entered yet. Be the first!</Text> : <View>{board.top.map(row)}</View>}
       {board.around.length ? <><Text style={{ textAlign: 'center', color: c.ink2, letterSpacing: 4 }}>···</Text><View>{board.around.map(row)}</View></> : null}
+      {PRIZES_CONFIRMED ? (
+        <View>
+          <View style={[s.row, { marginBottom: 4 }]}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 19, color: c.ink, flex: 1 }}>Competition prizes</Text>
+            <Text style={{ color: c.ink2, fontFamily: fonts.body }}>Winners on 27 Dec</Text>
+          </View>
+          {COMPETITION_PRIZES.map((p, i) => (
+            <View key={p.place} style={[s.prize, { borderTopColor: c.line, borderTopWidth: i ? 1 : 0 }]}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: p.medal, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: fonts.bodyBold, color: '#3A0A20' }}>{i + 1}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{p.place}</Text>
+                <Text style={{ fontSize: 12.5, color: c.ink2, fontFamily: fonts.body }}>{p.prize}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <Text style={{ color: c.ink2, fontSize: 12, fontFamily: fonts.body }}>Only first names and last initials are shown. Ties go to the higher finisher total.</Text>
     </View>
   );
@@ -253,7 +334,12 @@ const s = StyleSheet.create({
   cal: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   day: { width: '15%', aspectRatio: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexGrow: 1 },
   star: { position: 'absolute', top: 1, right: 4, fontSize: 10, color: '#FF8AB3' },
-  streak: { borderRadius: 22, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  streak: { borderRadius: 22, padding: 16, gap: 14 },
+  streakTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  track: { flexDirection: 'row', gap: 6 },
+  tierBar: { height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,.3)', overflow: 'hidden' },
+  prize: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  rulesBtn: { alignSelf: 'flex-start', backgroundColor: '#fff', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
   streakLabel: { color: '#fff', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   mult: { backgroundColor: '#fff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, alignItems: 'center' },
   panel: { borderRadius: 22, borderWidth: 1.5, padding: 16, gap: 10 },
