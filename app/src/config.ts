@@ -8,3 +8,10 @@
  * (see OwnedContext.tsx, where unlocking is currently free and stored on the device).
  */
 export const PURCHASES_ENABLED = process.env.EXPO_PUBLIC_PURCHASES_ENABLED === 'true';
+
+/**
+ * Prizes beyond the Elf Strength badge (vouchers, free skills, personal video feedback) are hidden until you
+ * confirm you can deliver them. Paid content is switched off, so vouchers and skill unlocks cannot be used yet.
+ * See legal/00-READ-ME-FIRST.md. Set EXPO_PUBLIC_PRIZES_CONFIRMED=true in eas.json when you are ready.
+ */
+export const PRIZES_CONFIRMED = process.env.EXPO_PUBLIC_PRIZES_CONFIRMED === 'true';

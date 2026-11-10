@@ -20,6 +20,7 @@ These are **drafts written for you to finish, not legal advice**. They describe 
 
 ## Decisions only you can make
 1. **Can you deliver every prize?** The design promises: $50 and $25 vouchers, 20% off, a free skill unlock (day 12), personal video feedback (day 18) and a free breakdown video (day 24). Today **paid content is switched off**, so vouchers and skill unlocks **cannot be used yet**. Either change the prizes, or say clearly when and how they can be redeemed.
+   In the app, everything except the **Elf Strength badge** (day 6) is hidden until you confirm: the prizes list, the prize stars on days 12, 18 and 24, and the competition prizes. To show them, set `EXPO_PUBLIC_PRIZES_CONFIRMED` to `true` in `app/eas.json` (the `PRIZES_CONFIRMED` switch in `app/src/config.ts`).
 2. **Is a permit needed?** A competition where the winner is decided by points earned (skill) is usually treated differently from one decided by chance, but rules differ by state. Ask a lawyer before you launch.
 3. **Is "adults only" the right audience?** The documents assume accounts are for adults and children take part under a parent. That choice decides which store rules apply.
 
