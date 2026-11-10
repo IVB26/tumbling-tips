@@ -6,6 +6,7 @@ import { fonts } from '../theme';
 import type { Skill } from '../data/skills';
 import Figure from './Figure';
 import { SECTIONS, Section, goTo, mm2, mmss, money, playlist, startState, tick } from '../lib/player';
+import { PURCHASES_ENABLED } from '../config';
 
 type Props = { skill: Skill | null; owned: boolean; onClose: () => void; onUnlock: (id: string) => void };
 
@@ -88,12 +89,16 @@ function Player({ skill, owned, onClose, onUnlock }: Omit<Props, 'skill'> & { sk
 
         {locked ? (
           <View style={[st.unlock, { backgroundColor: c.blush }]}>
-            <Text style={{ fontFamily: fonts.bodyBold, color: c.ink }}>Unlock drills and tips</Text>
-            <Text style={{ color: c.ink2, fontSize: 13, fontFamily: fonts.body }}>{skill.drills.length} drills and {skill.tips.length} tips for the {skill.title.toLowerCase()}. The breakdown stays free.</Text>
-            <Pressable onPress={() => onUnlock(skill.id)} style={[st.btn, { backgroundColor: c.pink }]}>
-              <Text style={{ color: c.onPink, fontFamily: fonts.bodyBold }}>Unlock · {money(skill.price)}</Text>
-            </Pressable>
-            <Text style={{ color: c.ink2, fontSize: 11, fontFamily: fonts.body }}>Demo: unlocking is free until in-app purchases are connected.</Text>
+            <Text style={{ fontFamily: fonts.bodyBold, color: c.ink }}>{PURCHASES_ENABLED ? 'Unlock drills and tips' : 'Drills and tips are coming soon'}</Text>
+            <Text style={{ color: c.ink2, fontSize: 13, fontFamily: fonts.body }}>
+              {PURCHASES_ENABLED ? `${skill.drills.length} drills and ${skill.tips.length} tips for the ${skill.title.toLowerCase()}. The breakdown stays free.`
+                : `${skill.drills.length} drills and ${skill.tips.length} tips for the ${skill.title.toLowerCase()} will be added in a future update. The breakdown is free.`}
+            </Text>
+            {PURCHASES_ENABLED ? (
+              <Pressable onPress={() => onUnlock(skill.id)} style={[st.btn, { backgroundColor: c.pink }]}>
+                <Text style={{ color: c.onPink, fontFamily: fonts.bodyBold }}>Unlock · {money(skill.price)}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 

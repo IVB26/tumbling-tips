@@ -32,7 +32,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "tsx src/lib/challenge.test.ts && tsx src/lib/player.test.ts && tsx src/lib/catalog.test.ts && tsx src/lib/library.test.ts && tsx src/lib/milestones.test.ts",
+    "test": "tsx src/lib/challenge.test.ts && tsx src/lib/player.test.ts && tsx src/lib/catalog.test.ts && tsx src/lib/library.test.ts && tsx src/lib/milestones.test.ts && tsx src/lib/purchases.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "private": true

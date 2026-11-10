@@ -7,6 +7,8 @@ import { useOwned } from '../OwnedContext';
 import { HERO, byId, filterTypes, gridItems, levelGroupLabel, levelGuides, topicGuides, ultIncluded, ultWorth, type Product } from '../lib/catalog';
 import { SKILLS, type Skill } from '../data/skills';
 import { money } from '../lib/player';
+import { PURCHASES_ENABLED } from '../config';
+import { priceLabel } from '../lib/purchases';
 import Figure from '../components/Figure';
 import Thumb from '../components/Thumb';
 import ProductDetail from '../components/ProductDetail';
@@ -57,10 +59,10 @@ export default function ExploreScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {['Guide', 'For parents', `${levelGuides().length} levels`].map(f => <Text key={f} style={[s.fact, { backgroundColor: c.blush, color: c.pinkDeep }]}>{f}</Text>)}
             </View>
-            <Text style={{ color: c.ink2, fontFamily: fonts.body }}>What every skill is, its key phases and why it matters. There’s a separate guide for each level, so you only buy the levels your child is working on.</Text>
+            <Text style={{ color: c.ink2, fontFamily: fonts.body }}>What every skill is, its key phases and why it matters. There’s a separate guide for each level, so you only need the levels your child is working on.</Text>
           </View>
           <View>
-            <View style={s.sec}><Text style={[s.h3, { color: c.ink }]}>Choose a level</Text><Text style={{ color: c.ink2 }}>{money(levelGuides()[0].price)} each</Text></View>
+            <View style={s.sec}><Text style={[s.h3, { color: c.ink }]}>Choose a level</Text><Text style={{ color: c.ink2 }}>{PURCHASES_ENABLED ? `${money(levelGuides()[0].price)} each` : 'Coming soon'}</Text></View>
             {levelGuides().map((p, i) => (
               <Pressable key={p.id} onPress={() => setOpen(p)} accessibilityRole="button" style={[s.row, { borderTopColor: c.line, borderTopWidth: i ? 1 : 0 }]}>
                 <View style={{ width: 56 }}><Thumb fig={p.fig} tint={p.tint} /></View>
@@ -68,7 +70,7 @@ export default function ExploreScreen() {
                   <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{p.title.replace('Skill Explained: ', '')}</Text>
                   <Text numberOfLines={2} style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{p.steps.length} skills · {p.steps.map(x => x[0]).join(', ')}</Text>
                 </View>
-                <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{owns(p.id) ? 'Owned' : money(p.price)}</Text>
+                <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{priceLabel(p.price, owns(p.id))}</Text>
               </Pressable>
             ))}
           </View>
@@ -100,7 +102,7 @@ export default function ExploreScreen() {
               <View style={[s.pg, { backgroundColor: c.surface, borderColor: c.line }]}>
                 <Text style={{ color: c.pinkDeep, fontSize: 11, fontFamily: fonts.bodyBold, letterSpacing: 1 }}>FOR PARENTS · BEST VALUE</Text>
                 <Text style={{ fontFamily: fonts.display, fontSize: 23, color: c.ink, lineHeight: 25 }}>The Ultimate Parent’s Guide</Text>
-                <Text style={{ color: c.ink2, fontFamily: fonts.body }}>{ultIncluded().length} parent resources in one guide, worth ${ultWorth().toFixed(2)} bought separately.</Text>
+                <Text style={{ color: c.ink2, fontFamily: fonts.body }}>{ultIncluded().length} parent resources in one guide{PURCHASES_ENABLED ? `, worth $${ultWorth().toFixed(2)} bought separately` : ''}.</Text>
                 {ultIncluded().map(p => (
                   <View key={p.id} style={[s.listRow, { borderTopColor: c.line }]}>
                     <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{p.title}</Text>
@@ -109,7 +111,7 @@ export default function ExploreScreen() {
                 ))}
                 <Pressable onPress={() => setOpen(ult)} style={[s.btn, { backgroundColor: c.pink }]}>
                   <Text style={{ color: c.onPink, fontFamily: fonts.bodyBold }}>
-                    {owns('g1') ? 'Open the Ultimate Parent’s Guide' : `Get all ${ultIncluded().length} · ${money(ult.price)} (save $${(ultWorth() - ult.price).toFixed(2)})`}
+                    {owns('g1') ? 'Open the Ultimate Parent’s Guide' : PURCHASES_ENABLED ? `Get all ${ultIncluded().length} · ${money(ult.price)} (save $${(ultWorth() - ult.price).toFixed(2)})` : 'View the Ultimate Parent’s Guide'}
                   </Text>
                 </Pressable>
               </View>
@@ -120,7 +122,7 @@ export default function ExploreScreen() {
                   <View style={{ width: 56 }}><Thumb fig={levelGuides()[0].fig} tint={levelGuides()[0].tint} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>Skill Explained</Text>
-                    <Text numberOfLines={2} style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>A guide for each level, from Novice to Level 5. Buy only the levels you need.</Text>
+                    <Text numberOfLines={2} style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>A guide for each level, from Novice to Level 5.</Text>
                   </View>
                   <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{levelGroupLabel(owns)}</Text>
                 </Pressable>
@@ -131,7 +133,7 @@ export default function ExploreScreen() {
                       <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{p.title}</Text>
                       <Text numberOfLines={2} style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{p.desc}</Text>
                     </View>
-                    <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{owns(p.id) ? 'Owned' : money(p.price)}</Text>
+                    <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{priceLabel(p.price, owns(p.id))}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -159,7 +161,7 @@ export default function ExploreScreen() {
                   <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: c.ink }}>{p.title}</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{p.level}</Text>
-                    <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{owns(p.id) ? 'Owned' : money(p.price)}</Text>
+                    <Text style={{ fontFamily: fonts.bodyBold, color: c.pinkDeep }}>{priceLabel(p.price, owns(p.id))}</Text>
                   </View>
                 </Pressable>
               ))}
