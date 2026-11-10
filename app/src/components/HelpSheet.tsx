@@ -6,6 +6,7 @@ import { fonts } from '../theme';
 import { SKILLS } from '../data/skills';
 import { byId } from '../lib/catalog';
 import { money } from '../lib/player';
+import { PURCHASES_ENABLED } from '../config';
 import { addMilestone, type Milestone } from '../lib/milestones';
 
 export type HelpKind = 'skill' | 'correction' | 'support' | 'celebrate';
@@ -47,7 +48,7 @@ export default function HelpSheet({ kind, owns, onClose, onOpenGuide, onWatchSki
   const cta = guide && gid ? (
     <Pressable onPress={() => onOpenGuide(gid)} style={[s.btn, { backgroundColor: gid === 'se1' ? c.blush : c.pink }]}>
       <Text style={{ color: gid === 'se1' ? c.pinkDeep : c.onPink, fontFamily: fonts.bodyBold, textAlign: 'center' }}>
-        {owns(gid) ? `Open ${guide.title}` : `Want more? Get ${guide.title} · ${money(guide.price)}`}
+        {owns(gid) ? `Open ${guide.title}` : PURCHASES_ENABLED ? `Want more? Get ${guide.title} · ${money(guide.price)}` : `See ${guide.title} (coming soon)`}
       </Text>
     </Pressable>
   ) : null;

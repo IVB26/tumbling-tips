@@ -1,4 +1,5 @@
 import { CATALOG, ULT_INCLUDES, type Product } from '../data/catalog';
+import { PURCHASES_ENABLED } from '../config';
 
 export const byId = (id: string) => CATALOG.find(p => p.id === id);
 /** Owning the Ultimate Parent's Guide (g1) also unlocks the guides bundled inside it. */
@@ -22,10 +23,10 @@ export const levelGuides = () => CATALOG.filter(p => isLevelGuide(p.id));
 /** Guides listed on their own: everything except the Ultimate guide and the level guides (those sit under Skill Explained). */
 export const topicGuides = () => CATALOG.filter(p => p.type === 'Guide' && p.id !== 'g1' && !isLevelGuide(p.id));
 /** Right-hand label of the Skill Explained row: "From $2.99", "2/6 owned" or "Owned". */
-export function levelGroupLabel(owns: (id: string) => boolean): string {
+export function levelGroupLabel(owns: (id: string) => boolean, enabled = PURCHASES_ENABLED): string {
   const lg = levelGuides(), got = lg.filter(p => owns(p.id)).length;
   if (got === lg.length) return 'Owned';
   if (got > 0) return `${got}/${lg.length} owned`;
-  return 'From $' + Math.min(...lg.map(p => p.price)).toFixed(2);
+  return enabled ? 'From $' + Math.min(...lg.map(p => p.price)).toFixed(2) : 'Coming soon';
 }
 export type { Product };

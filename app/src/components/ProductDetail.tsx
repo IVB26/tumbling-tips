@@ -2,7 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useColors } from '../ThemeContext';
 import { fonts } from '../theme';
-import { money } from '../lib/player';
+import { PURCHASES_ENABLED } from '../config';
+import { canBuy, canGetFree, priceLabel } from '../lib/purchases';
 import type { Product } from '../data/catalog';
 import Thumb from './Thumb';
 
@@ -38,17 +39,16 @@ export default function ProductDetail({ p, owned, onBack, onBuy }: { p: Product;
             </View>
           );
         })}
-        {free ? null : <Text style={{ textAlign: 'center', color: c.ink2, fontSize: 13, paddingTop: 6, fontFamily: fonts.body }}>Buy to unlock all {p.steps.length}</Text>}
+        {free ? null : <Text style={{ textAlign: 'center', color: c.ink2, fontSize: 13, paddingTop: 6, fontFamily: fonts.body }}>{PURCHASES_ENABLED ? `Buy to unlock all ${p.steps.length}` : 'The rest of this is coming in a future update.'}</Text>}
       </View>
       <View style={[s.buybar, { borderTopColor: c.line }]}>
-        <Text style={{ fontFamily: fonts.display, fontSize: 24, color: c.ink }}>{owned ? 'Owned' : money(p.price)}</Text>
-        {owned ? null : (
+        <Text style={{ fontFamily: fonts.display, fontSize: 24, color: c.ink }}>{priceLabel(p.price, owned)}</Text>
+        {canBuy(p.price, owned) || canGetFree(p.price, owned) ? (
           <Pressable onPress={onBuy} style={[s.btn, { backgroundColor: c.pink }]}>
-            <Text style={{ color: c.onPink, fontFamily: fonts.bodyBold }}>{p.price === 0 ? 'Get for free' : 'Buy (demo)'}</Text>
+            <Text style={{ color: c.onPink, fontFamily: fonts.bodyBold }}>{p.price === 0 ? 'Get for free' : 'Buy'}</Text>
           </Pressable>
-        )}
+        ) : null}
       </View>
-      {owned || p.price === 0 ? null : <Text style={{ color: c.ink2, fontSize: 11, textAlign: 'center', fontFamily: fonts.body }}>Demo: buying is free until in-app purchases are connected.</Text>}
     </View>
   );
 }
