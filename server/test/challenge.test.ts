@@ -130,7 +130,7 @@ test('leaderboard: ranked, ties broken by finisher total, and nothing private is
   assert.equal(lb.me.rank, 3); assert.equal(lb.me.isMe, true); assert.equal(lb.ahead.name, 'Zara N.');
   const text = JSON.stringify(lb);
   assert.ok(!/@example|athleteId|email|created/i.test(text), 'no private data in the leaderboard');
-  assert.deepEqual(Object.keys(lb.top[0]).sort(), ['badge', 'isMe', 'name', 'pts', 'rank', 'streak']);
+  assert.deepEqual(Object.keys(lb.top[0]).sort(), ['badge', 'isMe', 'name', 'pts', 'rank', 'ref', 'streak']);
   assert.equal((await call('GET', '/leaderboard')).status, 401);
 });
 

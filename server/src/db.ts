@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS challenge_days (
   ticks TEXT NOT NULL DEFAULT '[]', done INTEGER NOT NULL DEFAULT 0, on_time INTEGER NOT NULL DEFAULT 0,
   finished_at INTEGER, confirmed_at INTEGER, finisher INTEGER, finisher_at INTEGER, flagged INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (athlete_id, day));
+CREATE TABLE IF NOT EXISTS reports (
+  id TEXT PRIMARY KEY, athlete_id TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+  reporter_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, reason TEXT NOT NULL, created_at INTEGER NOT NULL,
+  UNIQUE (athlete_id, reporter_user_id));
 `;
 
 export function openDb(path = ':memory:'): DB {

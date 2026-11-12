@@ -25,8 +25,13 @@ export function loadProgress(db: DB, athleteId: string): Progress {
 export type Standing = { athleteId: string; name: string; pts: number; streak: number; badge: boolean; finisherTotal: number; createdAt: number; rank: number };
 
 /** Everyone who entered, ranked. Ties go to the higher finisher total (per the published rules). */
-export function standings(db: DB, lastOpenDay: number): Standing[] {
-  const athletes = db.prepare('SELECT id, name, created_at FROM athletes').all() as unknown as { id: string; name: string; created_at: number }[];
+/**
+ * `reviewUserId` is the App Store demo account. Its athletes only ever appear on the demo account's own leaderboard
+ * (forReviewer = true), and never on the real one, so test data cannot mix with real entrants.
+ */
+export function standings(db: DB, lastOpenDay: number, reviewUserId: string | null = null, forReviewer = false): Standing[] {
+  const all = db.prepare('SELECT id, name, created_at, user_id FROM athletes').all() as unknown as { id: string; name: string; created_at: number; user_id: string }[];
+  const athletes = reviewUserId ? all.filter(a => (forReviewer ? a.user_id === reviewUserId : a.user_id !== reviewUserId)) : all;
   const rows = db.prepare('SELECT * FROM challenge_days').all() as unknown as Row[];
   const byAthlete = new Map<string, Row[]>();
   for (const r of rows) (byAthlete.get(r.athlete_id) ?? byAthlete.set(r.athlete_id, []).get(r.athlete_id)!).push(r);

@@ -8,6 +8,7 @@ import type { Config } from './config';
 import type { Mailer } from './mailer';
 import { challengeClock } from './clock';
 import { limitsFor, loadProgress, standings, dayPoints, multiplier, currentStreak, totalPoints } from './scoring';
+import { isNameAllowed } from './names';
 import { DAYS, dayExercises, finisherFor, finisherPoints } from '../../app/src/lib/challenge';
 
 const CODE_TTL = 10 * 60_000, RESEND_WAIT = 60_000, MAX_ATTEMPTS = 5, SESSION_TTL = 90 * 24 * 3600_000, MAX_ATHLETES = 6;
@@ -48,6 +49,14 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
     return q<User>('SELECT id, email FROM users WHERE id = ?', s.user_id)!;
   };
   const isAdmin = (u: User) => config.adminEmails.includes(u.email.toLowerCase());
+  // The App Store demo account sees the Challenge as if it were `reviewNow`, so reviewers can try it before 1 December.
+  const reviewerEmail = config.reviewLogin?.email;
+  const isReviewer = (u: User) => !!reviewerEmail && u.email.toLowerCase() === reviewerEmail;
+  const reviewerId = () => (reviewerEmail ? q<{ id: string }>('SELECT id FROM users WHERE email = ?', reviewerEmail)?.id ?? null : null);
+  const clockFor = (u: User) => challengeClock(isReviewer(u) ? config.reviewNow : now(), config.tz, config.endDay);
+  const board = (u: User, lastOpenDay: number) => standings(db, lastOpenDay, reviewerId(), isReviewer(u));
+  /** An opaque, stable label for a leaderboard row. It is only good for reporting, and reveals nothing about the athlete. */
+  const refOf = (athleteId: string) => hmac('ref:' + athleteId).slice(0, 20);
   /** Every athlete route goes through this, so one family can never read or change another family's child. */
   const ownAthlete = (u: User, id: string) => {
     const a = q<{ id: string; name: string; user_id: string }>('SELECT id, name, user_id FROM athletes WHERE id = ?', id);
@@ -127,7 +136,7 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
   });
 
   // ---------- athletes (child profiles) ----------
-  const nameSchema = z.string().trim().regex(NAME, 'Use a first name and last initial only, like "Mia R."');
+  const nameSchema = z.string().trim().regex(NAME, 'Use a first name and last initial only, like "Mia R."').refine(isNameAllowed, 'Please choose a different name.');
   app.post('/athletes', async req => {
     const u = authed(req);
     const { name } = z.object({ name: nameSchema }).parse(req.body);
@@ -150,9 +159,9 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
   // ---------- challenge ----------
   app.get('/challenge/clock', async () => ({ ...clock(), serverTime: now().toISOString(), tz: config.tz }));
 
-  const stateFor = (athleteId: string) => {
-    const c = clock(), p = loadProgress(db, athleteId);
-    const st = standings(db, c.lastOpenDay);
+  const stateFor = (athleteId: string, u: User) => {
+    const c = clockFor(u), p = loadProgress(db, athleteId);
+    const st = board(u, c.lastOpenDay);
     const me = st.find(s => s.athleteId === athleteId)!;
     return {
       clock: c,
@@ -165,8 +174,8 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
     };
   };
   const dayParam = (v: string) => { const d = Number(v); if (!Number.isInteger(d) || d < 1 || d > DAYS) throw new HttpError(400, 'invalid_day', 'Day must be 1 to 24.'); return d; };
-  const openDay = (day: number) => {
-    const c = clock();
+  const openDay = (day: number, u: User) => {
+    const c = clockFor(u);
     if (c.phase === 'before') throw new HttpError(403, 'challenge_not_started', 'The challenge starts on 1 December.');
     if (c.phase === 'closed') throw new HttpError(403, 'challenge_closed', 'The challenge has finished.');
     if (day > c.lastOpenDay) throw new HttpError(403, 'day_not_open', `Day ${day} opens on ${day} December.`);
@@ -175,21 +184,21 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
   const getDay = (athleteId: string, day: number) =>
     q<{ ticks: string; done: number; finisher: number | null }>('SELECT ticks, done, finisher FROM challenge_days WHERE athlete_id = ? AND day = ?', athleteId, day);
 
-  app.get<{ Params: { id: string } }>('/athletes/:id/challenge', async req => stateFor(ownAthlete(authed(req), req.params.id).id));
+  app.get<{ Params: { id: string } }>('/athletes/:id/challenge', async req => { const u = authed(req); return stateFor(ownAthlete(u, req.params.id).id, u); });
 
   app.put<{ Params: { id: string; day: string } }>('/athletes/:id/challenge/days/:day/ticks', async req => {
-    const a = ownAthlete(authed(req), req.params.id), day = dayParam(req.params.day);
-    openDay(day);
+    const u = authed(req), a = ownAthlete(u, req.params.id), day = dayParam(req.params.day);
+    openDay(day, u);
     const n = dayExercises(day).length;
     const { ticks } = z.object({ ticks: z.array(z.boolean()).length(n) }).parse(req.body);
     if (getDay(a.id, day)?.done) throw new HttpError(409, 'day_finished', 'This day is already finished.');
     run(`INSERT INTO challenge_days (athlete_id, day, ticks) VALUES (?,?,?) ON CONFLICT(athlete_id, day) DO UPDATE SET ticks = excluded.ticks`, a.id, day, JSON.stringify(ticks));
-    return stateFor(a.id);
+    return stateFor(a.id, u);
   });
 
   app.post<{ Params: { id: string; day: string } }>('/athletes/:id/challenge/days/:day/finish', async req => {
-    const a = ownAthlete(authed(req), req.params.id), day = dayParam(req.params.day);
-    const c = openDay(day);
+    const u = authed(req), a = ownAthlete(u, req.params.id), day = dayParam(req.params.day);
+    const c = openDay(day, u);
     z.object({ confirm: z.literal(true) }).parse(req.body); // the signed-in parent confirms the day was done
     const row = getDay(a.id, day);
     if (row?.done) throw new HttpError(409, 'day_finished', 'This day is already finished.');
@@ -198,12 +207,12 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
     if (ticks.length !== n || !ticks.every(Boolean)) throw new HttpError(409, 'not_all_ticked', 'Tick every exercise before finishing the day.');
     const t = now().getTime(), onTime = c.onTimeDay === day ? 1 : 0;
     run('UPDATE challenge_days SET done = 1, on_time = ?, finished_at = ?, confirmed_at = ? WHERE athlete_id = ? AND day = ?', onTime, t, t, a.id, day);
-    return stateFor(a.id);
+    return stateFor(a.id, u);
   });
 
   app.post<{ Params: { id: string; day: string } }>('/athletes/:id/challenge/days/:day/finisher', async req => {
-    const a = ownAthlete(authed(req), req.params.id), day = dayParam(req.params.day);
-    const c = openDay(day);
+    const u = authed(req), a = ownAthlete(u, req.params.id), day = dayParam(req.params.day);
+    const c = openDay(day, u);
     const lim = limitsFor(day);
     const { value } = z.object({ value: z.number().int().min(1).max(lim.max) }).parse(req.body);
     const row = getDay(a.id, day);
@@ -211,21 +220,60 @@ export function buildApp({ db, config, mailer, now = () => new Date() }: AppDeps
     if (c.onTimeDay !== day) throw new HttpError(403, 'finisher_closed', 'The finisher can only be done on its own date.');
     if (row.finisher != null) throw new HttpError(409, 'finisher_logged', 'The finisher is already logged for this day.');
     run('UPDATE challenge_days SET finisher = ?, finisher_at = ?, flagged = ? WHERE athlete_id = ? AND day = ?', value, now().getTime(), value > lim.typical * 2 ? 1 : 0, a.id, day);
-    return { ...stateFor(a.id), finisherName: finisherFor(day).name };
+    return { ...stateFor(a.id, u), finisherName: finisherFor(day).name };
   });
 
   app.get<{ Querystring: { athleteId?: string } }>('/leaderboard', async req => {
     const u = authed(req);
     const mine = req.query.athleteId ? ownAthlete(u, req.query.athleteId).id : null;
-    const st = standings(db, clock().lastOpenDay);
-    // Public rows only expose a first name, last initial and score. No ids, emails or dates.
-    const pub = (s: (typeof st)[number]) => ({ rank: s.rank, name: s.name, pts: s.pts, streak: s.streak, badge: s.badge, isMe: s.athleteId === mine });
+    const st = board(u, clockFor(u).lastOpenDay);
+    // Public rows only expose a first name, last initial and score, plus an opaque `ref` used only for reporting. No ids, emails or dates.
+    const pub = (s: (typeof st)[number]) => ({ rank: s.rank, name: s.name, pts: s.pts, streak: s.streak, badge: s.badge, isMe: s.athleteId === mine, ref: refOf(s.athleteId) });
     const me = mine ? st.find(s => s.athleteId === mine) : undefined;
     const around = me && me.rank > 10 ? st.slice(Math.max(0, me.rank - 2), me.rank + 1).map(pub) : [];
     return { entered: st.length, top: st.slice(0, 10).map(pub), around, me: me ? pub(me) : null, ahead: me && me.rank > 1 ? { name: st[me.rank - 2].name, pts: st[me.rank - 2].pts } : null };
   });
 
+  // ---------- reporting a leaderboard name ----------
+  // Names are typed by parents and shown to other users, so anyone can report one. An admin is emailed and can rename it.
+  app.post('/leaderboard/report', { config: { rateLimit: { max: 20, timeWindow: '1 hour' } } }, async req => {
+    const u = authed(req);
+    const { ref, reason } = z.object({ ref: z.string().min(10).max(40), reason: z.enum(['inappropriate_name', 'other']) }).parse(req.body);
+    const target = all<{ id: string; user_id: string; name: string }>('SELECT id, user_id, name FROM athletes').find(a => refOf(a.id) === ref);
+    if (!target) throw new HttpError(404, 'not_found', 'That entry is no longer on the leaderboard.');
+    if (target.user_id === u.id) throw new HttpError(400, 'own_entry', 'You can not report your own athlete.');
+    const r = run('INSERT OR IGNORE INTO reports (id, athlete_id, reporter_user_id, reason, created_at) VALUES (?,?,?,?,?)', randomUUID(), target.id, u.id, reason, now().getTime());
+    if (Number(r.changes) > 0) {
+      // Tell the admins, best effort. A failed email must never make the report fail.
+      for (const to of config.adminEmails) {
+        mailer.send(to, 'Tumble Tips: a leaderboard name was reported',
+          `The leaderboard name "${target.name}" was reported (${reason === 'inappropriate_name' ? 'inappropriate name' : 'other'}).\n\nReview it with the admin tools: GET /admin/reports, then POST /admin/athletes/${target.id}/rename if it needs changing.`)
+          .catch(e => console.error('report email failed:', (e as Error).message));
+      }
+    }
+    return { ok: true }; // the same answer whether or not it was a repeat report
+  });
+
   // ---------- admin (fair play) ----------
+  app.get('/admin/reports', async req => {
+    if (!isAdmin(authed(req))) throw new HttpError(403, 'forbidden');
+    return all(`SELECT a.id athleteId, a.name, COUNT(*) reports, MIN(r.created_at) firstReportedAt, GROUP_CONCAT(DISTINCT r.reason) reasons
+                FROM reports r JOIN athletes a ON a.id = r.athlete_id GROUP BY a.id ORDER BY reports DESC, firstReportedAt`);
+  });
+  app.post<{ Params: { id: string } }>('/admin/athletes/:id/rename', async req => {
+    if (!isAdmin(authed(req))) throw new HttpError(403, 'forbidden');
+    const { name } = z.object({ name: nameSchema }).parse(req.body);
+    if (!q('SELECT 1 FROM athletes WHERE id = ?', req.params.id)) throw new HttpError(404, 'not_found');
+    run('UPDATE athletes SET name = ? WHERE id = ?', name, req.params.id);
+    run('DELETE FROM reports WHERE athlete_id = ?', req.params.id); // handled
+    return { ok: true };
+  });
+  app.post<{ Params: { id: string } }>('/admin/reports/:id/dismiss', async req => {
+    if (!isAdmin(authed(req))) throw new HttpError(403, 'forbidden');
+    run('DELETE FROM reports WHERE athlete_id = ?', req.params.id);
+    return { ok: true };
+  });
+
   app.get('/admin/flagged', async req => {
     if (!isAdmin(authed(req))) throw new HttpError(403, 'forbidden');
     return all(`SELECT a.id athleteId, a.name, d.day, d.finisher, d.finisher_at finisherAt FROM challenge_days d JOIN athletes a ON a.id = d.athlete_id WHERE d.flagged = 1 ORDER BY d.finisher_at`);
