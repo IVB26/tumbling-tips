@@ -54,5 +54,9 @@ for (const f of FINISHERS) assert.ok(text(false).includes(f.name), `rules list t
 for (const m of ['×1', '×2', '×3', '×4', 'Fair play', 'Safety', 'Daily exercises']) assert.ok(text(false).includes(m), m);
 assert.ok(!/voucher|free skill|video feedback/i.test(text(false)), 'unconfirmed prizes do not appear in the rules');
 assert.ok(text(false).includes('Elf Strength badge'));
+// Apple requires contest rules to say Apple is not involved, and that entry is free
+assert.ok(text(false).includes('not sponsored, endorsed or run by Apple or Google'), 'the Apple statement is in the rules');
+assert.ok(text(false).includes('Entry is free and no purchase is necessary'));
+assert.ok(text(true).includes('not sponsored, endorsed or run by Apple or Google'));
 assert.ok(text(true).includes('Day 12'), 'confirmed prizes appear when switched on');
 console.log('challenge extras: all tests passed');

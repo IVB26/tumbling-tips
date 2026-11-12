@@ -27,6 +27,7 @@ The app is for **parents, guardians and coaches**. An adult creates the account.
 | **A child's first name and last initial** (for example "Mia R.") | To show the child on the Challenge leaderboard | You, when you add an athlete |
 | **Challenge activity**: which exercises were ticked, which days were finished and when, whether a day was finished on time, finisher scores, points and streaks | To run the Christmas Strength Challenge and work out scores and rankings | You, as you use the app |
 | **A sign-in token** | To keep you signed in for up to 90 days | Created by our server |
+| **Reports you make** about a leaderboard name (which entry, your reason, and your account) | To review reported names and keep the leaderboard suitable for children | You |
 
 Please **do not enter a child's full name**, a photo, a phone number or any other personal details. The app only asks for a first name and last initial, and rejects anything else.
 
@@ -52,7 +53,7 @@ We do not sell your information. We do not send marketing emails unless you agre
 ## 6. Who can see it
 
 - **Other app users (the leaderboard).** Signed-in users can see, for each entrant on the leaderboard: the **first name and last initial, points, streak and a badge** if earned. They cannot see anyone's email, profile or day-by-day activity.
-- **Our administrators**, to run the Challenge and review flagged scores.
+- **Our administrators**, to run the Challenge, review flagged scores, and review reported names. If you report a name, the person who owns that entry is not told who reported it.
 - **Service providers** who help us run the app, under our instructions:
   - **Railway** hosts our server and database.
   - **Resend** delivers our sign-in emails, so it handles your email address and the email we send you.
@@ -68,6 +69,7 @@ Our server is hosted by Railway in the **United States** (San Francisco region).
 - **Sign-in codes** (kept only as a one-way scrambled value, together with your email) are deleted when they expire, within about an hour. If you never finish signing in, we do not keep your email.
 - **Sign-in tokens** are deleted when they expire (90 days) or when you sign out.
 - **Your account, your athletes and their Challenge activity** are kept until you delete them, or for [[RETENTION PERIOD, for example 12 months after the Challenge ends]], whichever is first.
+- **Reports about a leaderboard name** are deleted once the report has been handled, when the entry or either account is deleted.
 - **Backups** of our database may keep deleted information for up to [[BACKUP PERIOD, confirm with your host]].
 
 ## 9. Your choices and rights

@@ -4,10 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../ThemeContext';
 import { fonts } from '../theme';
 import { useOwned } from '../OwnedContext';
-import { HERO, byId, filterTypes, gridItems, levelGroupLabel, levelGuides, topicGuides, ultIncluded, ultWorth, type Product } from '../lib/catalog';
+import { audiencesShown, byId, filterTypes, gridItems, heroFor, levelGroupLabel, levelGuides, topicGuides, ultIncluded, ultWorth, type Product } from '../lib/catalog';
 import { SKILLS, type Skill } from '../data/skills';
 import { money } from '../lib/player';
-import { PURCHASES_ENABLED } from '../config';
+import { FULL_CATALOGUE, PURCHASES_ENABLED } from '../config';
 import { priceLabel } from '../lib/purchases';
 import Figure from '../components/Figure';
 import Thumb from '../components/Thumb';
@@ -33,21 +33,22 @@ export default function ExploreScreen() {
   const openFromSheet = (id: string) => { setSheet(null); setGroup(false); setOpen(byId(id) ?? null); };
   const types = filterTypes(aud);
   const items = gridItems(aud, types.includes(filter) ? filter : 'All');
-  const hero = HERO[aud], heroP = byId(hero.id)!;
+  const hero = heroFor(aud), heroP = hero ? byId(hero.id)! : null;
+  const auds = audiencesShown();   // the Parents/Coaches switch only appears when both have something to show
   const ult = byId('g1')!;
 
   return (
     <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 12, gap: 22 }}>
       <View style={s.top}>
         <Text style={{ fontFamily: fonts.display, fontSize: 17, color: c.pink, lineHeight: 18 }}>Tayah’s{'\n'}Tumble Tips</Text>
-        <View style={[s.mode, { backgroundColor: c.blush }]} accessibilityRole="tablist">
+        {auds.length > 1 ? <View style={[s.mode, { backgroundColor: c.blush }]} accessibilityRole="tablist">
           {(['parent', 'coach'] as Aud[]).map(a => (
             <Pressable key={a} accessibilityRole="tab" accessibilityState={{ selected: aud === a }} onPress={() => switchAud(a)}
               style={[s.modeBtn, aud === a && { backgroundColor: c.pink }]}>
               <Text style={{ fontFamily: fonts.bodyBold, fontSize: 13, color: aud === a ? c.onPink : c.ink2 }}>{a === 'parent' ? 'Parents' : 'Coaches'}</Text>
             </Pressable>
           ))}
-        </View>
+        </View> : null}
       </View>
 
       {open ? <ProductDetail p={open} owned={owns(open.id)} onBack={() => setOpen(null)} onBuy={() => unlock(open.id)} />
@@ -77,13 +78,13 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <>
-          <View style={[s.hero, { backgroundColor: c.pink }]}>
+          {hero && heroP ? <View style={[s.hero, { backgroundColor: c.pink }]}>
             <View style={s.arc}><Figure name={heroP.fig} color="rgba(255,255,255,.35)" /></View>
             <Text style={s.eyebrow}>{hero.eyebrow.toUpperCase()}</Text>
             <Text style={[s.heroTitle, { fontFamily: fonts.display }]}>{hero.title}</Text>
             <Text style={s.heroBody}>{hero.body}</Text>
             <Pressable onPress={() => setOpen(heroP)} style={s.heroBtn}><Text style={{ color: '#B5124F', fontFamily: fonts.bodyBold }}>View</Text></Pressable>
-          </View>
+          </View> : null}
 
           {aud === 'parent' ? (
             <>
@@ -99,6 +100,7 @@ export default function ExploreScreen() {
                 </View>
               </View>
 
+              {FULL_CATALOGUE ? <>
               <View style={[s.pg, { backgroundColor: c.surface, borderColor: c.line }]}>
                 <Text style={{ color: c.pinkDeep, fontSize: 11, fontFamily: fonts.bodyBold, letterSpacing: 1 }}>FOR PARENTS · BEST VALUE</Text>
                 <Text style={{ fontFamily: fonts.display, fontSize: 23, color: c.ink, lineHeight: 25 }}>The Ultimate Parent’s Guide</Text>
@@ -137,10 +139,11 @@ export default function ExploreScreen() {
                   </Pressable>
                 ))}
               </View>
+              </> : null}
             </>
           ) : null}
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} accessibilityRole="tablist">
+          {types.length > 2 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} accessibilityRole="tablist">
             {types.map(t => {
               const on = t === (types.includes(filter) ? filter : 'All');
               return (
@@ -150,10 +153,10 @@ export default function ExploreScreen() {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </ScrollView> : null}
 
-          <View style={{ gap: 12 }}>
-            <View style={s.sec}><Text style={[s.h3, { color: c.ink }]}>{aud === 'parent' ? 'For parents' : 'For coaches'}</Text><Text style={{ color: c.ink2 }}>{items.length} products</Text></View>
+          {items.length > 0 ? <View style={{ gap: 12 }}>
+            <View style={s.sec}><Text style={[s.h3, { color: c.ink }]}>{!FULL_CATALOGUE ? 'Free tips' : aud === 'parent' ? 'For parents' : 'For coaches'}</Text><Text style={{ color: c.ink2 }}>{FULL_CATALOGUE ? `${items.length} products` : items.length}</Text></View>
             <View style={s.grid}>
               {items.map(p => (
                 <Pressable key={p.id} accessibilityRole="button" onPress={() => setOpen(p)} style={s.card}>
@@ -166,7 +169,7 @@ export default function ExploreScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </View> : null}
         </>
       )}
       <HelpSheet kind={sheet} owns={owns} onClose={() => setSheet(null)} onOpenGuide={openFromSheet} onWatchSkill={id => { setSheet(null); setPlayer(SKILLS.find(k => k.id === id) ?? null); }} />

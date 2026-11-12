@@ -6,7 +6,7 @@ import { fonts } from '../theme';
 import { SKILLS } from '../data/skills';
 import { byId } from '../lib/catalog';
 import { money } from '../lib/player';
-import { PURCHASES_ENABLED } from '../config';
+import { FULL_CATALOGUE, PURCHASES_ENABLED } from '../config';
 import { addMilestone, type Milestone } from '../lib/milestones';
 
 export type HelpKind = 'skill' | 'correction' | 'support' | 'celebrate';
@@ -45,7 +45,7 @@ export default function HelpSheet({ kind, owns, onClose, onOpenGuide, onWatchSki
   const B = ({ children }: { children: React.ReactNode }) => <Text style={{ fontFamily: fonts.bodyBold }}>{children}</Text>;
 
   const gid = kind ? GUIDE_FOR[kind] : null, guide = gid ? byId(gid) : null;
-  const cta = guide && gid ? (
+  const cta = guide && gid && (FULL_CATALOGUE || owns(gid)) ? (
     <Pressable onPress={() => onOpenGuide(gid)} style={[s.btn, { backgroundColor: gid === 'se1' ? c.blush : c.pink }]}>
       <Text style={{ color: gid === 'se1' ? c.pinkDeep : c.onPink, fontFamily: fonts.bodyBold, textAlign: 'center' }}>
         {owns(gid) ? `Open ${guide.title}` : PURCHASES_ENABLED ? `Want more? Get ${guide.title} · ${money(guide.price)}` : `See ${guide.title} (coming soon)`}

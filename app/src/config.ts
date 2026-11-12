@@ -15,3 +15,20 @@ export const PURCHASES_ENABLED = process.env.EXPO_PUBLIC_PURCHASES_ENABLED === '
  * See legal/00-READ-ME-FIRST.md. Set EXPO_PUBLIC_PRIZES_CONFIRMED=true in eas.json when you are ready.
  */
 export const PRIZES_CONFIRMED = process.env.EXPO_PUBLIC_PRIZES_CONFIRMED === 'true';
+
+/**
+ * The full shop (paid guides, bundles, coach products) is hidden for the first App Store release.
+ * Almost all of it is unfinished: there is no video, the guides have titles but no text, and nothing can be bought yet.
+ * Apple rejects apps with placeholder or "coming soon" content, so only content that really exists is shown:
+ * the Challenge, the free skill breakdowns, and the free tips.
+ * Set EXPO_PUBLIC_FULL_CATALOGUE=true when the paid content is real.
+ */
+export const FULL_CATALOGUE = process.env.EXPO_PUBLIC_FULL_CATALOGUE === 'true';
+
+/** Public pages that both stores require. Set in eas.json; production builds refuse to start without them (scripts/check-release.js). */
+export const LEGAL_URLS = {
+  privacy: process.env.EXPO_PUBLIC_PRIVACY_URL ?? '',
+  terms: process.env.EXPO_PUBLIC_TERMS_URL ?? '',
+  rules: process.env.EXPO_PUBLIC_RULES_URL ?? '',
+  support: process.env.EXPO_PUBLIC_SUPPORT_URL ?? '',
+};

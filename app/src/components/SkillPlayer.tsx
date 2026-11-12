@@ -6,7 +6,7 @@ import { fonts } from '../theme';
 import type { Skill } from '../data/skills';
 import Figure from './Figure';
 import { SECTIONS, Section, goTo, mm2, mmss, money, playlist, startState, tick } from '../lib/player';
-import { PURCHASES_ENABLED } from '../config';
+import { FULL_CATALOGUE, PURCHASES_ENABLED } from '../config';
 
 type Props = { skill: Skill | null; owned: boolean; onClose: () => void; onUnlock: (id: string) => void };
 
@@ -78,14 +78,14 @@ function Player({ skill, owned, onClose, onUnlock }: Omit<Props, 'skill'> & { sk
           <Pressable disabled={s.pos === pl.length - 1} onPress={() => setS(p => goTo(p, pl, p.pos + 1))} style={[st.pn, { backgroundColor: c.pink, borderColor: c.pink, opacity: s.pos === pl.length - 1 ? 0.4 : 1 }]}><Text style={[st.pnText, { color: c.onPink }]}>NEXT</Text></Pressable>
         </View>
 
-        <View style={[st.tabs, { backgroundColor: c.blush }]} accessibilityRole="tablist">
+        {FULL_CATALOGUE || owned ? <View style={[st.tabs, { backgroundColor: c.blush }]} accessibilityRole="tablist">
           {SECTIONS.map(([k, l]) => (
             <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: view === k }} onPress={() => setView(k)}
               style={[st.tab, view === k && { backgroundColor: c.surface }]}>
               <Text style={{ fontFamily: fonts.bodyBold, fontSize: 13, color: view === k ? c.pinkDeep : c.ink2 }}>{l}{k !== 'breakdown' && !owned ? ' 🔒' : ''}</Text>
             </Pressable>
           ))}
-        </View>
+        </View> : null}
 
         {locked ? (
           <View style={[st.unlock, { backgroundColor: c.blush }]}>

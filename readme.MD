@@ -18,6 +18,6 @@ cd server && npm test    # login, access control, dates, scoring, leaderboard, e
 
 ## Status
 Working: Explore, Skills, Library, Challenge (with accounts and server scoring), Account.
-Paid content is switched off for the first store release: paid items show "Coming soon" and there are no Buy or Unlock buttons. The switch is `PURCHASES_ENABLED` in `app/src/config.ts`. Do not turn it on until real In-App Purchases are connected, because unlocking is currently free and stored on the device.
+The paid shop is hidden for the first store release (`FULL_CATALOGUE` in `app/src/config.ts`), and paid content is switched off: paid items show "Coming soon" and there are no Buy or Unlock buttons. The switch is `PURCHASES_ENABLED` in `app/src/config.ts`. Do not turn it on until real In-App Purchases are connected, because unlocking is currently free and stored on the device.
 Not yet: real in-app purchases, guide text editor, Challenge tree and rules pop-ups.
 See `DEPLOY.md` and `server/README.md` for what is needed before launch.

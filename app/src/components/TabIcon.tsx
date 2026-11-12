@@ -11,7 +11,7 @@ export default function TabIcon({ name, color, size = 24 }: { name: string; colo
     case 'Explore': body = <><Circle cx={12} cy={12} r={9} {...line} /><Path d="M15.5 8.5l-2 5-5 2 2-5z" {...line} /></>; break;
     case 'Skills': body = <><Circle cx={12} cy={12} r={1.8} fill={color} stroke={color} strokeWidth={2} /><Path d="M12 12L5 6M12 12l7-6M12 12l-6 8M12 12l6 8" {...line} /></>; break;
     case 'Challenge': body = <><Rect x={4} y={10} width={16} height={10} rx={2} {...line} /><Path d="M3 7h18v3H3zM12 7v13M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0" {...line} /></>; break;
-    case 'Library': body = <><Rect x={3} y={4} width={18} height={16} rx={3} {...line} /><Path d="M10 9l5 3-5 3z" fill={color} stroke={color} strokeWidth={2} strokeLinejoin="round" /></>; break;
+    case 'Library': body = <Path d="M6 3h12v18l-6-4.5L6 21z" {...line} />; break;
     case 'Account': body = <><Circle cx={12} cy={8} r={4} {...line} /><Path d="M4 21c0-4 4-6 8-6s8 2 8 6" {...line} /></>; break;
     default: body = <Circle cx={12} cy={12} r={9} {...line} />;
   }

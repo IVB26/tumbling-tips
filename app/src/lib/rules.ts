@@ -25,6 +25,7 @@ export function rulesSections(confirmed = PRIZES_CONFIRMED): RuleSection[] {
         ? ['Every finished day adds an ornament to your tree. Prize days:']
         : ['Every finished day adds an ornament to your tree. Finish day 6 to earn the Elf Strength badge, shown next to your name on the leaderboard. Other prizes will be announced before the Challenge starts.'],
       bullets: confirmed ? prizeDays.map(([d, m]) => `Day ${d}: ${m.title}. ${m.body}.`) : undefined },
+    { title: 'Who runs it', paragraphs: ['This competition is run by Tayah’s Tumble Tips. Entry is free and no purchase is necessary.', 'It is not sponsored, endorsed or run by Apple or Google, and they have no involvement in it.'] },
     { title: 'Fair play', bullets: ['A parent or guardian confirms each finished day.', 'Only a first name and last initial are shown on the leaderboard.', 'Ties go to whoever has the higher finisher total.', 'Unusually high scores are checked and may be removed.'] },
     { title: 'Safety', paragraphs: ['Take part with adult supervision, warm up, use a safe space, and stop if anything hurts.'] },
   ];

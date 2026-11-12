@@ -27,6 +27,13 @@ These are **drafts written for you to finish, not legal advice**. They describe 
 ## What I changed in the code for the policy to be true
 The server used to keep the email address from an unfinished sign-in until that person asked for another code. It now **deletes expired sign-in codes and sessions every hour** (with a test). Without this change, the policy statement in section 8 would be false.
 
+## Added for App Store review
+- **First release shows only real content.** The paid shop (guides, bundles, coach products) is hidden, because almost all of it is unfinished and Apple rejects "coming soon" content. The switch is `FULL_CATALOGUE` in `app/src/config.ts`. Show it again only when the paid content is real.
+- **A production build now refuses to start without real links** to your Privacy Policy, Terms, Challenge Rules and a support address (`EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_TERMS_URL`, `EXPO_PUBLIC_RULES_URL`, `EXPO_PUBLIC_SUPPORT_URL` in `app/eas.json`). They are placeholders now, on purpose.
+- **Reviewer mode.** The demo account sees the Challenge as if it were 5 December. Real users are unaffected, and demo data never appears on the real leaderboard.
+- **Reporting names.** Any leaderboard entry can be reported. Admins get an email, and can rename the entry with the admin tools (`GET /admin/reports`, `POST /admin/athletes/:id/rename`). **There is no admin web page yet**, so renaming needs those tools; ask me and I will build a small page.
+- `app-review-notes.md` is ready to paste into App Store Connect.
+
 ## Not covered yet
 - **A web address for each document.** Both stores need the privacy policy at a **public link**, and Google also needs a public page about deleting an account. Options: publish the pages from this GitHub repo (GitHub Pages), or serve them from your Railway server. Ask me and I'll set up whichever you choose.
 - **Paid content.** When you switch on purchases, update the Terms (section 7), the store answers, and add refund and tax wording.

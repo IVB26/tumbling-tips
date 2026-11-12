@@ -7,6 +7,7 @@ import { SKILLS, SKILL_LEVELS, Skill } from '../data/skills';
 import Figure from '../components/Figure';
 import SkillPlayer from '../components/SkillPlayer';
 import { useOwned } from '../OwnedContext';
+import { FULL_CATALOGUE } from '../config';
 
 export default function SkillsScreen() {
   const c = useColors();
@@ -39,10 +40,10 @@ export default function SkillsScreen() {
               <View style={[s.thumb, { backgroundColor: tint(k.tint) }]}><Figure name={k.fig} color={c.pinkDeep} bg={c.bg} size="70%" /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: fonts.bodyBold, fontSize: 15.5, color: c.ink }}>{k.title}</Text>
-                <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{k.breakdown.length} steps · {k.drills.length} drills · {k.tips.length} tips</Text>
+                <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{k.breakdown.length} steps{FULL_CATALOGUE ? ` · ${k.drills.length} drills · ${k.tips.length} tips` : ''}</Text>
                 {owned.includes(k.id)
                   ? <Text style={{ color: c.good, fontFamily: fonts.bodyBold, fontSize: 12.5 }}>Unlocked</Text>
-                  : <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{k.level} · breakdown free</Text>}
+                  : <Text style={{ color: c.ink2, fontSize: 12.5, fontFamily: fonts.body }}>{FULL_CATALOGUE ? `${k.level} · breakdown free` : k.level}</Text>}
               </View>
               <Text style={{ color: c.ink2, fontSize: 20 }}>›</Text>
             </Pressable>

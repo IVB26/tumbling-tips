@@ -11,10 +11,10 @@ assert.equal(byId(HERO.parent.id)!.aud, 'parent'); assert.equal(byId(HERO.coach.
 
 // Grid never shows guides; filters work
 for (const aud of ['parent', 'coach'] as const) {
-  assert.ok(gridItems(aud, 'All').every(p => p.aud === aud && p.type !== 'Guide'));
-  for (const t of filterTypes(aud).slice(1)) assert.ok(gridItems(aud, t).length > 0 && gridItems(aud, t).every(p => p.type === t));
+  assert.ok(gridItems(aud, 'All', true).every(p => p.aud === aud && p.type !== 'Guide'));
+  for (const t of filterTypes(aud, true).slice(1)) assert.ok(gridItems(aud, t, true).length > 0 && gridItems(aud, t, true).every(p => p.type === t));
 }
-assert.equal(filterTypes('parent')[0], 'All');
+assert.equal(filterTypes('parent', true)[0], 'All');
 
 // Ultimate Parent's Guide: bundles 5 guides, buying it unlocks them
 assert.equal(ultIncluded().length, ULT_INCLUDES.length);
@@ -23,15 +23,15 @@ assert.equal(ownsProduct([], 'g7'), false);
 assert.equal(ownsProduct(['g7'], 'g7'), true);
 assert.equal(ownsProduct(['g1'], 'g7'), true);
 assert.equal(ownsProduct(['g1'], 'p1'), false, 'bundle only unlocks its own guides');
-assert.ok(!topicGuides().some(p => p.id === 'g1'));
+assert.ok(!topicGuides(true).some(p => p.id === 'g1'));
 console.log('catalog: all tests passed');
 
 // Skill Explained: six level guides shown as ONE entry (matches the design chat's final version)
 import { isLevelGuide, levelGuides, levelGroupLabel } from './catalog.ts';
 assert.equal(levelGuides().length, 6);
 assert.ok(levelGuides().every(p => /^Skill Explained: /.test(p.title) && p.price === 2.99));
-assert.ok(topicGuides().every(p => !isLevelGuide(p.id)));
-assert.equal(topicGuides().length + 1, 14, 'the design shows "14 guides" including the Skill Explained entry');
+assert.ok(topicGuides(true).every(p => !isLevelGuide(p.id)));
+assert.equal(topicGuides(true).length + 1, 14, 'the design shows "14 guides" including the Skill Explained entry');
 assert.equal(levelGroupLabel(() => false, true), 'From $2.99');
 assert.equal(levelGroupLabel(id => id === 'se0' || id === 'se3', true), '2/6 owned');
 assert.equal(levelGroupLabel(() => true, true), 'Owned');

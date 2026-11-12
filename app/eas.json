@@ -20,7 +20,11 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://tumble-tips-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://tumble-tips-production.up.railway.app",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://REPLACE-WITH-YOUR-PRIVACY-POLICY-PAGE",
+        "EXPO_PUBLIC_TERMS_URL": "https://REPLACE-WITH-YOUR-TERMS-PAGE",
+        "EXPO_PUBLIC_RULES_URL": "https://REPLACE-WITH-YOUR-CHALLENGE-RULES-PAGE",
+        "EXPO_PUBLIC_SUPPORT_URL": "mailto:REPLACE-WITH-YOUR-SUPPORT-EMAIL"
       }
     }
   },

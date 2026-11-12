@@ -43,6 +43,7 @@ Everything else (location, contacts, photos, browsing history, purchases, diagno
 - **Google content rating:** answer the questionnaire honestly (no user-to-user chat, no user-generated content shared between users, no purchases yet).
 
 ## For the reviewers
-- **Demo login:** both stores need a login that works without reading your email. The server supports a fixed demo sign-in, set by two Railway variables (`REVIEW_EMAIL` and `REVIEW_CODE`). Choose them, set them in Railway, and put them in the store review notes. [[NOT SET YET]]
+- **Demo login:** both stores need a login that works without reading your email. The server supports a fixed demo sign-in, set by two Railway variables (`REVIEW_EMAIL` and `REVIEW_CODE`). Choose them, set them in Railway, and put them in the store review notes (`app-review-notes.md` is ready to paste). The demo account sees the Challenge as if it were 5 December, so reviewers can test it. [[NOT SET YET]]
+- **User-generated content:** the only text users create that others see is a child's first name and last initial on the leaderboard. Names are filtered for obvious profanity, and any other entry can be **reported** (flag button), which emails the admins. Say this if the questionnaire asks about user-generated content.
 - **Explain the Challenge:** tell them it runs 1 to 24 December, entry is free, and no purchase is needed. Paid content is shown as "Coming soon" in this version.
 - **Competition rules:** link to the Challenge Rules. They include the statement that Apple and Google are not involved.

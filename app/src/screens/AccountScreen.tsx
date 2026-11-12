@@ -6,6 +6,7 @@ import { fonts } from '../theme';
 import { useAuth } from '../AuthContext';
 import { api } from '../api';
 import LoginForm from '../components/LoginForm';
+import { LegalLinksList } from '../components/LegalLinks';
 import AthleteForm from '../components/AthleteForm';
 
 export default function AccountScreen() {
@@ -52,6 +53,7 @@ export default function AccountScreen() {
           </View>
         </>
       )}
+      <LegalLinksList />
     </ScrollView>
   );
 }

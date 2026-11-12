@@ -32,8 +32,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "tsx src/lib/challenge.test.ts && tsx src/lib/player.test.ts && tsx src/lib/catalog.test.ts && tsx src/lib/library.test.ts && tsx src/lib/milestones.test.ts && tsx src/lib/purchases.test.ts && tsx src/lib/extras.test.ts",
-    "typecheck": "tsc --noEmit"
+    "test": "tsx src/lib/challenge.test.ts && tsx src/lib/player.test.ts && tsx src/lib/catalog.test.ts && tsx src/lib/library.test.ts && tsx src/lib/milestones.test.ts && tsx src/lib/purchases.test.ts && tsx src/lib/extras.test.ts && tsx src/lib/lite.test.ts && tsx src/lib/legal.test.ts",
+    "typecheck": "tsc --noEmit",
+    "eas-build-pre-install": "node scripts/check-release.js",
+    "check-release": "EAS_BUILD_PROFILE=production node scripts/check-release.js"
   },
   "private": true
 }

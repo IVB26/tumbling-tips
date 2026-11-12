@@ -3,6 +3,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import { useColors } from '../ThemeContext';
 import { fonts } from '../theme';
 import { useAuth } from '../AuthContext';
+import { LinkText } from './LegalLinks';
+import { LEGAL_URLS } from '../config';
 
 /** Email + 6-digit code. No passwords to store or forget. */
 export default function LoginForm() {
@@ -42,7 +44,7 @@ export default function LoginForm() {
         <Pressable onPress={() => setConsent(v => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: consent }} style={s.consent}>
           <View style={[s.box, { borderColor: consent ? c.pink : c.line, backgroundColor: consent ? c.pink : 'transparent' }]}>{consent ? <Text style={{ color: '#fff', fontSize: 13 }}>✓</Text> : null}</View>
           <Text style={{ flex: 1, color: c.ink, fontSize: 13, fontFamily: fonts.body }}>
-            I am a parent or guardian, and I agree to the Terms and the Privacy Policy. I understand only my child’s first name and last initial are shown on the leaderboard.
+            I am a parent or guardian, and I agree to the <LinkText url={LEGAL_URLS.terms}>Terms</LinkText> and the <LinkText url={LEGAL_URLS.privacy}>Privacy Policy</LinkText>. I understand only my child’s first name and last initial are shown on the leaderboard.
           </Text>
         </Pressable>
       ) : null}

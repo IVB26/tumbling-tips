@@ -3,6 +3,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useColors } from '../ThemeContext';
 import { fonts } from '../theme';
 import { rulesSections } from '../lib/rules';
+import { LinkText } from './LegalLinks';
+import { LEGAL_URLS } from '../config';
+import { isValidLegalUrl } from '../lib/legal';
 
 /** "How it works": the Challenge rules in short, from the same numbers the server uses. */
 export default function RulesModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -32,6 +35,7 @@ export default function RulesModal({ visible, onClose }: { visible: boolean; onC
               </View>
             ))}
           </ScrollView>
+          {isValidLegalUrl(LEGAL_URLS.rules) ? <Text style={[text, { textAlign: 'center', paddingBottom: 10 }]}>Read the <LinkText url={LEGAL_URLS.rules}>full official rules</LinkText></Text> : null}
           <Pressable onPress={onClose} style={[s.btn, { backgroundColor: c.pink }]}><Text style={{ color: c.onPink, fontFamily: fonts.bodyBold, textAlign: 'center' }}>Let’s go!</Text></Pressable>
         </View>
       </View>

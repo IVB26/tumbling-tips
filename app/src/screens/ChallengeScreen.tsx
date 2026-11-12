@@ -14,12 +14,13 @@ import { streakMessage, tierProgress } from '../lib/streak';
 import Tree from '../components/Tree';
 import RulesModal from '../components/RulesModal';
 import RewardModal, { type Reward } from '../components/RewardModal';
+import ReportSheet from '../components/ReportSheet';
 
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 type Clock = { phase: 'before' | 'open' | 'closed'; dom: number | null; lastOpenDay: number; onTimeDay: number | null };
 type Day = { day: number; done: boolean; onTime: boolean; ticks: boolean[]; finisher: number | null; points: number; finisherPoints: number };
 type State = { clock: Clock; days: Day[]; totalPoints: number; streak: number; multiplier: number; rank: number; entered: number };
-type Row = { rank: number; name: string; pts: number; streak: number; badge: boolean; isMe: boolean };
+type Row = { rank: number; name: string; pts: number; streak: number; badge: boolean; isMe: boolean; ref?: string };
 type Board = { entered: number; top: Row[]; around: Row[]; me: Row | null; ahead: { name: string; pts: number } | null };
 
 export default function ChallengeScreen() {
@@ -270,6 +271,8 @@ function Hero({ st, clock, onRules }: { st: State | null; clock: Clock | null; o
 
 function BoardView({ board, athleteName }: { board: Board | null; athleteName: string }) {
   const c = useColors();
+  const { token } = useAuth();
+  const [reporting, setReporting] = useState<{ name: string; ref: string } | null>(null);
   if (!board) return <ActivityIndicator />;
   const row = (r: Row) => (
     <View key={`${r.rank}-${r.name}`} style={[s.lrow, { borderTopColor: c.line, backgroundColor: r.isMe ? c.blush : 'transparent' }]}>
@@ -279,6 +282,11 @@ function BoardView({ board, athleteName }: { board: Board | null; athleteName: s
         <Text style={{ fontSize: 12, color: c.ink2, fontFamily: fonts.body }}>{r.streak}-day streak</Text>
       </View>
       <Text style={{ fontFamily: fonts.display, fontSize: 16, color: c.ink }}>{r.pts}<Text style={{ fontSize: 11, color: c.ink2 }}> pts</Text></Text>
+      {!r.isMe && r.ref ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Report ${r.name}`} hitSlop={10} onPress={() => setReporting({ name: r.name, ref: r.ref! })}>
+          <Text style={{ fontSize: 16, color: c.ink2 }}>⚑</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
   return (
@@ -315,6 +323,7 @@ function BoardView({ board, athleteName }: { board: Board | null; athleteName: s
         </View>
       ) : null}
       <Text style={{ color: c.ink2, fontSize: 12, fontFamily: fonts.body }}>Only first names and last initials are shown. Ties go to the higher finisher total.</Text>
+      <ReportSheet target={reporting} token={token} onClose={() => setReporting(null)} />
     </View>
   );
 }

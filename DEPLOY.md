@@ -17,7 +17,7 @@ The repo root has `railway.json` and `package.json`, so Railway builds from the 
    | `RESEND_API_KEY` | from Resend |
    | `EMAIL_FROM` | `Tayah's Tumble Tips <login@your-verified-domain>` |
    | `ADMIN_EMAILS` | your email (can review flagged scores) |
-   | `REVIEW_EMAIL`, `REVIEW_CODE` | demo login for Apple/Google reviewers, e.g. `review@yourdomain` and a 6-digit code |
+   | `REVIEW_EMAIL`, `REVIEW_CODE` | demo login for Apple/Google reviewers, e.g. `review@yourdomain` and a 6-digit code. No email is sent for it. The demo account sees the Challenge as if it were 5 December (change with `REVIEW_NOW`), and its data is kept off the real leaderboard |
 
 4. **Public URL:** service > Settings > Networking > Generate Domain. Check `https://<that-domain>/health` shows `{"ok":true}`.
 5. **Tell the app where the server is:** build the app with `EXPO_PUBLIC_API_URL=https://<that-domain>`.
